@@ -10,7 +10,13 @@ This implementation does not include the Self-paced Learning mechanism, which wi
 
 Stock trend prediction is an interesting problem with many applications in finance. For instance, understanding how individual stocks trend will allow for maximizing profit from the stock investment (Hu et al. 2019). To this end, the authors propose a method based on the human learning processes: sequential context dependency, diverse influence, and effective and efficient learning. 
 
-The guide is structured as follows: 
+Sequential context dependency refers to the ability of human investors to implement and combine a variety of news sources on a single stock into a unified context before making a decision. Thus, to mimic such human analytical process, the authors propose that the prediction framework should incorporate the news sources in a sequential, temporal context. 
+
+Diverse influence indicates that some news sources have more influential and durable effect on the stocks' trends. Thus, these news sources should have more attention paid to them than those that do not have such characteristics. 
+
+Effective and efficient learning indicates that human investors tend to first gain an overall knowledge with common occasions, and then turn to exceptional cases (Hu et al. 2019). Thus a learning mechanism should incorporate such discrepancies in the informativeness of the news sources, and conducts learning on more informative news at the earlier stage, and further optimize to tackle harder samples (Hu et al. 2019). 
+
+The guide is structured as follows: we first describe how the previous three strategies are incorporated into the Hybrid Attention Network (HAN) proposed by the authors. Then, we describe the learning of the network on the Statsnet data-set, with a focus on the description of the data and the learning curves. Lastly, we describe the stock trading strategy based on stock trend classifications as proposed by the authors. 
 
 ## HAN - Hybrid Attention Networks
 
