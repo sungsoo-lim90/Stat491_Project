@@ -24,16 +24,5 @@ The guide is structured as follows:
 
 ## Directories
 - src: source files;
-- res: resource files including,
-    - Vocabulary file `vocab.txt`;
-    - Pre-trained embeddings of [GloVe](https://github.com/stanfordnlp/GloVe). We used the GloVe obtained from the Twitter corpora which you could download [here](http://nlp.stanford.edu/data/wordvecs/glove.twitter.27B.zip).
-- data: datasets consisting of tweets and prices which you could download [here](https://github.com/yumoxu/stocknet-dataset).
-
-## Configurations
-Model configurations are listed in `config.yml` where you could set `variant_type` to *hedge, tech, fund* or *discriminative* to get four corresponding model variants, HedgeFundAnalyst, TechincalAnalyst, FundamentalAnalyst or DiscriminativeAnalyst described in the paper. 
-
-Additionally, when you set `variant_type=hedge, alpha=0`, you would acquire IndependentAnalyst without any auxiliary effects. 
 
 ## Running
-
-After configuration, use `sh src/run.sh` in your terminal to start model learning and test the model after the training is completed. If you would like to do them separately, simply comment out `exe.train_and_dev()` or `exe.restore_and_test()` in `Main.py`.
