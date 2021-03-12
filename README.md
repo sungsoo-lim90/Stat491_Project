@@ -519,11 +519,27 @@ In this section, we describe learning curves of the model on the Statsnet data s
 ![Alt text](/src/loss_100.png?raw=true)
 ![Alt text](/src/acc_100.png?raw=true)
 
+One thing that we notice from the learning curves is that 
+
+### Annualized return from the paper
+
+In the paper, the authors use the follwing estimation strategy: the modle gives each stock a score based on the probabiloity to have a rising trend minus the probability to have a declining trend. Based on these scores, the authors construct a portfolio called top-K, selecting K stocks with the highest scores to construct a new portfolio for the enxt trading day. The annualized return for their method and other baseline methods are shown. 
+
+![Alt text](/src/annualized.png?raw=true)
+
 ### Conclusions
 
 
 
 ## Directories
-- src: source files;
+- src: source files
 
-## Running
+## Running the codes
+
+The code can be directly run by running the main.py file. The arguments can be changed in the config.py file. 
+
+## Future References
+
+* Listening to Chaotic Whispers: A Deep Learning Framework for News-oriented Stock Trend Prediction (ref. https://arxiv.org/abs/1712.02136)
+* GloVe: Global Vectors for Word Representation (ref. https://github.com/stanfordnlp/GloVe)
+* Source code (ref. https://github.com/donghyeonk/han)
