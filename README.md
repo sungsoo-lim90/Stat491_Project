@@ -304,8 +304,13 @@ The two classes are evenly divided for each of the samples.
 ```
 ### Model
 
-As discussed above, the model is 
+As discussed above, the model is divided into the following five layers:
 
+- News Embedding Layer (embed selected words)
+- News-level Attention Layer
+- Sequential Modeling Layer (bi-directional GRU)
+- Temporal Attention Layer
+- Discriminative MLP Layer
 
 ```python
 import tensorflow as tf
@@ -415,6 +420,10 @@ class HAN(tf.keras.Model):
 
 ### Train and Testing
 
+The model is trained using the standard gradient descent method. For each step in the enumerated dataset, the loss value and accuracy are calculated for recording for each epoch. Additionally, the loss value is used to calculate the gradient to apply the learning process.
+
+For testing purposes, the same process occurs, except that the learning is turned off. Thus, we can also calculate the epoch-wise accuracy. 
+
 ```python
 
 def train(model, optimizer, dataset, step_counter, ep, class_weights,
@@ -497,17 +506,20 @@ def test(model, dataset, class_weights, show_classification_report=False,
         tf.compat.v2.summary.scalar(name='accuracy', data=accuracy.result(), step=tf.compat.v1.train.get_or_create_global_step())
 
     if show_classification_report:
-        # print(classification_report(y_true, y_pred,
-        #                             target_names=['PRESERVE', 'UP', 'DOWN']))
         print(classification_report(y_true, y_pred,
                                     target_names=['DOWN', 'UP']))  # StockNet
 
-    return acc_train_epoch, loss_train_epoch #accuracy.result(), avg_loss.result()
+    return acc_train_epoch, loss_train_epoch
 ```
 
 ### Results
 
+In this section, we describe learning curves of the model on the Statsnet data set. In the following figures, we demonstrate the loss curves for training and validation samples, as well as the accuracy curves for the train, validation, and test samples.
 
+![Alt text](/src/loss_100.png?raw=true)
+![Alt text](/src/acc_100.png?raw=true)
+
+### Conclusions
 
 
 
