@@ -527,7 +527,7 @@ One thing that we notice from the learning curves is that normalization techniqu
 
 ### Annualized return from the paper
 
-In the paper, the authors use the follwing estimation strategy: the model gives each stock a score based on the probability to have a rising trend minus the probability to have a declining trend. Based on these scores, the authors construct a portfolio called top-K, selecting K stocks with the highest scores to construct a new portfolio for the enxt trading day. The annualized return for their method and other baseline methods are shown. 
+In the paper, the authors use the follwing estimation strategy: the model gives each stock a score based on the probability to have a rising trend minus the probability to have a declining trend. Based on these scores, the authors construct a portfolio called top-K, selecting K stocks with the highest scores to construct a new portfolio for the next trading day. The annualized return for their method and other baseline methods are shown. 
 
 ![Alt text](/src/annualized.png?raw=true)
 
