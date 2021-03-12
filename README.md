@@ -67,20 +67,23 @@ The Stocknet dataset included in this experiment is the two-year price movements
 We briefly describe 
 
 ### Model
-''' Python
+''' python
 
-def build_vocab(self, input_dir):
+    def build_vocab(self, input_dir):
         date_min = date(9999, 1, 1)
         date_max = date(1, 1, 1)
         datetime_format = '%a %b %d %H:%M:%S %z %Y'
         date_freq_dict = dict()
         max_news_len = 0
+
         word_freq_dict = dict()
         for root, subdirs, files in os.walk(input_dir):
+
             stock_name = str(root).replace(input_dir, '')
             if stock_name not in self.stock_name_set:
                 # print(stock_name, 'not in stock name dict')
                 continue
+
             for filename in files:
                 file_path = os.path.join(root, filename)
                 with open(file_path, 'r', encoding='utf-8') as f:
@@ -88,28 +91,35 @@ def build_vocab(self, input_dir):
                         line_dict = json.loads(line)
                         text = line_dict['text']
                         for w in text:
+
                             w = w.lower() if self.use_lowercase else w
+
                             if w in word_freq_dict:
                                 word_freq_dict[w] += 1
                             else:
                                 word_freq_dict[w] = 1
+
                         text_len = len(text)
                         if max_news_len < text_len:
                             max_news_len = text_len
+
                         created_date = \
                             datetime.strptime(line_dict['created_at'],
                                               datetime_format)
                         # created_date = created_date.replace(tzinfo=pytz.utc)
                         created_date = created_date.date()
+
                         if date_max < created_date:
                             date_max = created_date
                         elif date_min > created_date:
                             date_min = created_date
+
                         stock_date_key = '{}_{}'.format(root, created_date)
                         if stock_date_key in date_freq_dict:
                             date_freq_dict[stock_date_key] += 1
                         else:
                             date_freq_dict[stock_date_key] = 1
+
         # GloVe twitter 50-dim
         word2vec_dict = dict()
         with open(self.flags.word_embed_path, 'r', encoding='utf-8') as f:
@@ -117,9 +127,53 @@ def build_vocab(self, input_dir):
                 cols = line.split(' ')
                 if cols[0] in word_freq_dict:
                     word2vec_dict[cols[0]] = [float(l) for l in cols[1:]]
+
         most_freq_words = sorted(word_freq_dict, key=word_freq_dict.get,
                                  reverse=True)
-                                 '''
+
+        # <PAD> and <UNK>
+        assert len(most_freq_words) >= self.flags.vocab_size - 2
+
+        for w in most_freq_words:
+
+            if w not in word2vec_dict:
+                continue
+
+            w_idx = len(self.word2idx)
+            self.word2idx[w] = w_idx
+            self.idx2word[w_idx] = w
+
+            if len(self.word2idx) == self.flags.vocab_size:
+                break
+
+        final_size = len(self.word2idx)
+
+        word2vec = list()
+        sample_vec = word2vec_dict['good']
+        word2vec.append([0.] * len(sample_vec))  # <PAD>
+        word2vec.append([1.] * len(sample_vec))  # <UNK>
+        for w_idx in range(2, final_size):
+            word2vec.append(word2vec_dict[self.idx2word[w_idx]])
+            assert len(word2vec) == (w_idx + 1)
+
+        print('vocab', len(word_freq_dict), '->', final_size)
+
+        most_freq_news_date = \
+            sorted(date_freq_dict, key=date_freq_dict.get, reverse=True)[0]
+        max_date_len = date_freq_dict[most_freq_news_date]
+        tweet_zero_days = 0
+        for sd in date_freq_dict:
+            if date_freq_dict[sd] == 0:
+                tweet_zero_days += 1
+        print('tweet_zero_days', tweet_zero_days)
+        print('max_date_len', max_date_len)
+        print('max_news_len', max_news_len)
+        print('tweet time range', date_min, '~', date_max)
+
+        return date_min, date_max, max_date_len, max_news_len, \
+            np.asarray(word2vec)
+            
+'''
 ### 
 
 ### Results
