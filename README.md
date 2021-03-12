@@ -24,7 +24,7 @@ Hybrid Attention Network (HAN), as proposed by the authors, have the ability to 
 
 The Sequential context dependency, and the Diverse influence principles indicate that 1) the news are analyzed in a temporal fashion, with more attention to critical times, and 2) news are distinguished by significance. Thus, HAN incorporates the attention mechanisms at both the news level and and temporal level. The following figure from 
 
-![alt text](https://github.com/sungsoo-lim90/Stat491_Project/src/image.jpg?raw=true)
+![alt text](https://github.com/sungsoo-lim90/Stat491_Project/src/han.png?raw=true)
 
 ## News Embedding
 
