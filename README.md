@@ -67,21 +67,20 @@ The Stocknet dataset included in this experiment is the two-year price movements
 We briefly describe 
 
 ### Model
-'''    def build_vocab(self, input_dir):
+''' Python
+
+def build_vocab(self, input_dir):
         date_min = date(9999, 1, 1)
         date_max = date(1, 1, 1)
         datetime_format = '%a %b %d %H:%M:%S %z %Y'
         date_freq_dict = dict()
         max_news_len = 0
-
         word_freq_dict = dict()
         for root, subdirs, files in os.walk(input_dir):
-
             stock_name = str(root).replace(input_dir, '')
             if stock_name not in self.stock_name_set:
                 # print(stock_name, 'not in stock name dict')
                 continue
-
             for filename in files:
                 file_path = os.path.join(root, filename)
                 with open(file_path, 'r', encoding='utf-8') as f:
@@ -89,35 +88,28 @@ We briefly describe
                         line_dict = json.loads(line)
                         text = line_dict['text']
                         for w in text:
-
                             w = w.lower() if self.use_lowercase else w
-
                             if w in word_freq_dict:
                                 word_freq_dict[w] += 1
                             else:
                                 word_freq_dict[w] = 1
-
                         text_len = len(text)
                         if max_news_len < text_len:
                             max_news_len = text_len
-
                         created_date = \
                             datetime.strptime(line_dict['created_at'],
                                               datetime_format)
                         # created_date = created_date.replace(tzinfo=pytz.utc)
                         created_date = created_date.date()
-
                         if date_max < created_date:
                             date_max = created_date
                         elif date_min > created_date:
                             date_min = created_date
-
                         stock_date_key = '{}_{}'.format(root, created_date)
                         if stock_date_key in date_freq_dict:
                             date_freq_dict[stock_date_key] += 1
                         else:
                             date_freq_dict[stock_date_key] = 1
-
         # GloVe twitter 50-dim
         word2vec_dict = dict()
         with open(self.flags.word_embed_path, 'r', encoding='utf-8') as f:
@@ -125,7 +117,6 @@ We briefly describe
                 cols = line.split(' ')
                 if cols[0] in word_freq_dict:
                     word2vec_dict[cols[0]] = [float(l) for l in cols[1:]]
-
         most_freq_words = sorted(word_freq_dict, key=word_freq_dict.get,
                                  reverse=True)
                                  '''
