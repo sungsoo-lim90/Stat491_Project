@@ -64,114 +64,242 @@ As compared to the standard training process, the SLP takes longer in the beginn
 
 The Stocknet dataset included in this experiment is the two-year price movements from 01/01/2014 to 01/01/2016 of 88 stocks, coming from all the 8 stocks in the Conglomerates sector and the top 10 stocks in capital size in each of the other 8 sectors. For the news component, the preprocessed tweet data is used, where the keys are 'text', 'user_id_str', and 'created_at'. For the preprocessed price data, the entries are: date, movement percent, open price, high price, low price, close price, volume. 
 
-We briefly describe 
+We briefly describe the codes for 
 
-### Model
+### Data Processing 
 ``` python
 
-    def build_vocab(self, input_dir):
-        date_min = date(9999, 1, 1)
-        date_max = date(1, 1, 1)
-        datetime_format = '%a %b %d %H:%M:%S %z %Y'
-        date_freq_dict = dict()
-        max_news_len = 0
+    def load_stock_history(self):
 
-        word_freq_dict = dict()
-        for root, subdirs, files in os.walk(input_dir):
+        # 0 date, 1 movement percent, 2 open price,
+        # 3 high price, 4 low price, 5 close price, 6 volume
 
-            stock_name = str(root).replace(input_dir, '')
+        # stock_dict
+        # key: stock_name
+        # val: [stock_name + '\t' + stock_date, close_price diff. percent]
+        stock_dict = dict()
+        diff_percentages = list()
+
+        num_trading_days = 0
+
+        file_names = os.listdir(self.flags.data_dir)
+        for filename in file_names:
+            stock_name = os.path.splitext(os.path.basename(filename))[0]
+
             if stock_name not in self.stock_name_set:
-                # print(stock_name, 'not in stock name dict')
                 continue
 
-            for filename in files:
-                file_path = os.path.join(root, filename)
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        line_dict = json.loads(line)
-                        text = line_dict['text']
-                        for w in text:
+            if len(self.flags.whitelist) > 0 \
+                    and stock_name not in self.flags.whitelist:
+                continue
 
-                            w = w.lower() if self.use_lowercase else w
+            filepath = os.path.join(self.flags.data_dir, filename)
 
-                            if w in word_freq_dict:
-                                word_freq_dict[w] += 1
-                            else:
-                                word_freq_dict[w] = 1
+            # trading day -1
+            with open(filepath, 'r', encoding='utf-8') as f:
 
-                        text_len = len(text)
-                        if max_news_len < text_len:
-                            max_news_len = text_len
+                # *reversed*
+                for l in reversed(list(f)):
+                    row = l.rstrip().split('\t')
 
-                        created_date = \
-                            datetime.strptime(line_dict['created_at'],
-                                              datetime_format)
-                        # created_date = created_date.replace(tzinfo=pytz.utc)
-                        created_date = created_date.date()
+                    stock_date = datetime.strptime(row[0], '%Y-%m-%d').date()
 
-                        if date_max < created_date:
-                            date_max = created_date
-                        elif date_min > created_date:
-                            date_min = created_date
+                    if not (date(2014, 1, 1) <= stock_date < date(2016, 1, 1)):
+                        continue
 
-                        stock_date_key = '{}_{}'.format(root, created_date)
-                        if stock_date_key in date_freq_dict:
-                            date_freq_dict[stock_date_key] += 1
+                    price_diff_percent = float(row[1])
+
+                    if stock_name not in stock_dict:
+                        stock_dict[stock_name] = list()
+                    stock_dict[stock_name].append(
+                        [stock_date, price_diff_percent]
+                    )
+
+                    num_trading_days += 1
+
+                    if len(stock_dict[stock_name]) > self.flags.days:
+                        diff_percentages.append(price_diff_percent)
+
+        num_ex = 0
+        for stock_name in stock_dict:
+            num_ex += len(stock_dict[stock_name]) - self.flags.days
+
+        print('target stock history len', num_ex)
+        print('num_trading_days', num_trading_days)
+
+        down_bound = -0.5  # StockNet
+        up_bound = 0.55  # StockNet
+
+        return stock_dict, down_bound, up_bound
+        
+            def map_stocks_tweets(self):
+        # StockNet
+        train_x = list()
+        train_y = list()
+        dev_x = list()
+        dev_y = list()
+        test_x = list()
+        test_y = list()
+
+        train_lable_freq_dict = dict()
+        dev_lable_freq_dict = dict()
+        test_lable_freq_dict = dict()
+
+        diff_percentages = list()
+
+        num_dates = 0
+        num_tweets = 0
+        zero_tweet_days = 0
+        num_filtered_samples = 0  # StockNet: no tweet lags
+
+        for stock_name in self.stock_dict:
+
+            stock_history = self.stock_dict[stock_name]
+
+            stock_days = len(stock_history)
+
+            num_stock_dates = 0
+            num_stock_tweets = 0
+            stock_zero_tweet_days = 0
+
+            for i in range(stock_days):
+
+                # StockNet
+                if -0.005 <= stock_history[i][1] < 0.0055:
+                    num_filtered_samples += 1
+                    continue
+
+                stock_date = stock_history[i][0]
+
+                ex = list()
+                day_lens = list()
+                news_lens = list()
+
+                days = list()
+
+                num_empty_tweet_days = 0
+
+                for j in [5, 4, 3, 2, 1]:
+                    tweet_date = stock_date - timedelta(days=j)
+
+                    stock_key = stock_name + '\t' + str(tweet_date)
+
+                    ex_1 = list()
+                    t_lens = list()
+
+                    if stock_key in self.date_tweets:
+                        tweets = self.date_tweets[stock_key]
+
+                        for w_idxes in tweets:
+                            ex_1.append(
+                                '\t'.join([str(widx) for widx in w_idxes]))
+                            t_lens.append(len(w_idxes))
+
+                        day_lens.append(len(tweets))
+
+                        num_stock_tweets += len(tweets)
+
+                        if len(tweets) == 0:
+                            num_empty_tweet_days += 1
                         else:
-                            date_freq_dict[stock_date_key] = 1
+                            days.append(tweet_date)
 
-        # GloVe twitter 50-dim
-        word2vec_dict = dict()
-        with open(self.flags.word_embed_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                cols = line.split(' ')
-                if cols[0] in word_freq_dict:
-                    word2vec_dict[cols[0]] = [float(l) for l in cols[1:]]
+                    else:
+                        # no tweets date
+                        day_lens.append(0)
 
-        most_freq_words = sorted(word_freq_dict, key=word_freq_dict.get,
-                                 reverse=True)
+                    ex.append('\n'.join(ex_1))
+                    news_lens.append(t_lens)
 
-        # <PAD> and <UNK>
-        assert len(most_freq_words) >= self.flags.vocab_size - 2
+                # StockNet: at least one tweet
+                if num_empty_tweet_days > 0:
+                    num_filtered_samples += 1
+                    continue
 
-        for w in most_freq_words:
+                # StockNet
+                if stock_history[i][1] <= 1e-7:
+                    label = 0
+                else:
+                    label = 1
 
-            if w not in word2vec_dict:
-                continue
+                label_date = stock_history[i][0]
 
-            w_idx = len(self.word2idx)
-            self.word2idx[w] = w_idx
-            self.idx2word[w_idx] = w
+                # split to train/dev/test sets
+                if date(2014, 1, 1) <= label_date < date(2015, 8, 1):
+                    train_x.append(ex)
+                    train_y.append(label)
 
-            if len(self.word2idx) == self.flags.vocab_size:
-                break
+                    if label in train_lable_freq_dict:
+                        train_lable_freq_dict[label] += 1
+                    else:
+                        train_lable_freq_dict[label] = 1
 
-        final_size = len(self.word2idx)
+                    num_dates += self.flags.days
+                    num_stock_dates += self.flags.days
 
-        word2vec = list()
-        sample_vec = word2vec_dict['good']
-        word2vec.append([0.] * len(sample_vec))  # <PAD>
-        word2vec.append([1.] * len(sample_vec))  # <UNK>
-        for w_idx in range(2, final_size):
-            word2vec.append(word2vec_dict[self.idx2word[w_idx]])
-            assert len(word2vec) == (w_idx + 1)
+                elif date(2015, 8, 1) <= label_date < date(2015, 10, 1):
+                    dev_x.append(ex)
+                    dev_y.append(label)
 
-        print('vocab', len(word_freq_dict), '->', final_size)
+                    if label in dev_lable_freq_dict:
+                        dev_lable_freq_dict[label] += 1
+                    else:
+                        dev_lable_freq_dict[label] = 1
 
-        most_freq_news_date = \
-            sorted(date_freq_dict, key=date_freq_dict.get, reverse=True)[0]
-        max_date_len = date_freq_dict[most_freq_news_date]
-        tweet_zero_days = 0
-        for sd in date_freq_dict:
-            if date_freq_dict[sd] == 0:
-                tweet_zero_days += 1
-        print('tweet_zero_days', tweet_zero_days)
-        print('max_date_len', max_date_len)
-        print('max_news_len', max_news_len)
-        print('tweet time range', date_min, '~', date_max)
+                    num_dates += self.flags.days
+                    num_stock_dates += self.flags.days
 
-        return date_min, date_max, max_date_len, max_news_len, \
-            np.asarray(word2vec)
+                elif date(2015, 10, 1) <= label_date < date(2016, 1, 1):
+                    test_x.append(ex)
+                    test_y.append(label)
+
+                    if label in test_lable_freq_dict:
+                        test_lable_freq_dict[label] += 1
+                    else:
+                        test_lable_freq_dict[label] = 1
+
+                    num_dates += self.flags.days
+                    num_stock_dates += self.flags.days
+
+                else:
+                    num_filtered_samples += 1
+                    continue
+
+                diff_percentages.append(stock_history[i][1])
+
+            if num_stock_dates > 0:
+                print(stock_name + '\t{:.2f}\t{}/{}\t{:.2f}\t{}/{}'.format(
+                          num_stock_tweets / num_stock_dates,
+                          num_stock_tweets, num_stock_dates,
+                          stock_zero_tweet_days / num_stock_dates,
+                          stock_zero_tweet_days, num_stock_dates))
+            else:
+                print(stock_name, 'no valid')
+
+        print('Total avg # of tweets per day'
+              '\t{:.2f}\t{}/{}\t{:.2f}\t{}/{}'.format(
+                num_tweets / num_dates, num_tweets, num_dates,
+                zero_tweet_days / num_dates, zero_tweet_days, num_dates))
+
+        print('num_filtered_samples', num_filtered_samples)
+
+        print('train Label freq', [(self.idx2label[l], train_lable_freq_dict[l])
+                                   for l in train_lable_freq_dict])
+        print('train Label ratio',
+              ['{}: {:.4f}'.format(l, train_lable_freq_dict[l] / len(train_x))
+               for l in train_lable_freq_dict])
+        print('dev Label freq', [(self.idx2label[l], dev_lable_freq_dict[l])
+                                 for l in dev_lable_freq_dict])
+        print('dev Label ratio',
+              ['{}: {:.4f}'.format(l, dev_lable_freq_dict[l] / len(dev_x))
+               for l in dev_lable_freq_dict])
+        print('test Label freq', [(self.idx2label[l], test_lable_freq_dict[l])
+                                  for l in test_lable_freq_dict])
+        print('test Label ratio',
+              ['{}: {:.4f}'.format(l, test_lable_freq_dict[l] / len(test_x))
+               for l in test_lable_freq_dict])
+
+        return train_x, train_y, dev_x, dev_y, test_x, test_y
             
 ```
 ### 
