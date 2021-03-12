@@ -64,12 +64,29 @@ As compared to the standard training process, the SLP takes longer in the beginn
 
 The Stocknet dataset included in this experiment is the two-year price movements from 01/01/2014 to 01/01/2016 of 88 stocks, coming from all the 8 stocks in the Conglomerates sector and the top 10 stocks in capital size in each of the other 8 sectors. For the news component, the preprocessed tweet data is used, where the keys are 'text', 'user_id_str', and 'created_at'. For the preprocessed price data, the entries are: date, movement percent, open price, high price, low price, close price, volume. 
 
+This dataset comprises two main components
+
+- ./tweet: tweet data from Twitter
+- ./price: price data from Yahoo Finance
+
+Each component contains their raw data and preprocessed data organized by stocks.
+
 We briefly describe the codes for data processing, HAN, and training and testing.
 
 ### Data Processing 
 
-First, we load the stock history based on the historical price data. Since the dataset describes the two-year price movements from 2014 to 2016 of 88 stocks, we first make sure that 
+First, we load the stock history based on the historical price data. Since the dataset describes the two-year price movements from 2014 to 2016 of 88 stocks, we first make sure that we can calculate the rise percentages of the individual stocks, as defined. We then define a stock name dictionary, which contains the name of the stocks as keys and the rise percentage and the number of days that the stock has been in the dataset. Finally, we set the two classes bounds as follows:
 
+- down_bound = -0.5  
+- up_bound = 0.55 
+
+Based on the stock name dictionary, we load the preprocessed tweets data. The preprocessed tweets data contain the key words of the tweets. We match the stock names to the tweets pertaining to those stocks, and save the lengths of the tweets and the contents of the tweets. Finally, the number of total samples with splits of train, validation, and test data is as follows: 
+
+- 20345 total number of train samples
+- 2555 number of validation samples
+- 3720 test samples
+
+The two classes are evenly divided for each of the samples. 
 
 ``` python
 
@@ -287,6 +304,9 @@ First, we load the stock history based on the historical price data. Since the d
 ```
 ### Model
 
+As discussed above, the model is 
+
+
 ```python
 import tensorflow as tf
 
@@ -486,6 +506,10 @@ def test(model, dataset, class_weights, show_classification_report=False,
 ```
 
 ### Results
+
+
+
+
 
 ## Directories
 - src: source files;
