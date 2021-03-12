@@ -64,9 +64,13 @@ As compared to the standard training process, the SLP takes longer in the beginn
 
 The Stocknet dataset included in this experiment is the two-year price movements from 01/01/2014 to 01/01/2016 of 88 stocks, coming from all the 8 stocks in the Conglomerates sector and the top 10 stocks in capital size in each of the other 8 sectors. For the news component, the preprocessed tweet data is used, where the keys are 'text', 'user_id_str', and 'created_at'. For the preprocessed price data, the entries are: date, movement percent, open price, high price, low price, close price, volume. 
 
-We briefly describe the codes for 
+We briefly describe the codes for data processing, HAN, and training and testing.
 
 ### Data Processing 
+
+First, we load the stock history based on the historical price data. Since the dataset describes the two-year price movements from 2014 to 2016 of 88 stocks, we first make sure that 
+
+
 ``` python
 
     def load_stock_history(self):
@@ -132,7 +136,9 @@ We briefly describe the codes for
 
         return stock_dict, down_bound, up_bound
         
-            def map_stocks_tweets(self):
+  
+   def map_stocks_tweets(self):
+   
         # StockNet
         train_x = list()
         train_y = list()
@@ -276,33 +282,208 @@ We briefly describe the codes for
             else:
                 print(stock_name, 'no valid')
 
-        print('Total avg # of tweets per day'
-              '\t{:.2f}\t{}/{}\t{:.2f}\t{}/{}'.format(
-                num_tweets / num_dates, num_tweets, num_dates,
-                zero_tweet_days / num_dates, zero_tweet_days, num_dates))
-
-        print('num_filtered_samples', num_filtered_samples)
-
-        print('train Label freq', [(self.idx2label[l], train_lable_freq_dict[l])
-                                   for l in train_lable_freq_dict])
-        print('train Label ratio',
-              ['{}: {:.4f}'.format(l, train_lable_freq_dict[l] / len(train_x))
-               for l in train_lable_freq_dict])
-        print('dev Label freq', [(self.idx2label[l], dev_lable_freq_dict[l])
-                                 for l in dev_lable_freq_dict])
-        print('dev Label ratio',
-              ['{}: {:.4f}'.format(l, dev_lable_freq_dict[l] / len(dev_x))
-               for l in dev_lable_freq_dict])
-        print('test Label freq', [(self.idx2label[l], test_lable_freq_dict[l])
-                                  for l in test_lable_freq_dict])
-        print('test Label ratio',
-              ['{}: {:.4f}'.format(l, test_lable_freq_dict[l] / len(test_x))
-               for l in test_lable_freq_dict])
-
         return train_x, train_y, dev_x, dev_y, test_x, test_y
             
 ```
-### 
+### Model
+
+```python
+import tensorflow as tf
+
+
+class HAN(tf.keras.Model):
+    def __init__(self, wordvec, flags_obj):
+        super(HAN, self).__init__()
+
+        self.flags = flags_obj
+
+        # wordvec: ndarray
+        vocab_size = wordvec.shape[0]
+        self.embedding_dim = wordvec.shape[1]
+        self.embedding = tf.keras.layers.Embedding(
+            vocab_size, self.embedding_dim, weights=[wordvec], mask_zero=True,
+            trainable=True,
+            # embeddings_regularizer=tf.keras.regularizers.l2(self.flags.l2)
+        )
+
+        self.dropout = tf.keras.layers.Dropout(rate=self.flags.dr)  # StockNet
+
+        # Word-level attention
+        self.t = tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
+
+        # News-level attention
+        self.u = tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
+
+        # Sequence modeling
+        self.bi_gru = self.get_bi_gru(self.embedding_dim)
+
+        # Temporal attention
+        self.o = tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
+
+        # Discriminative Network (MLP)
+        self.fc0 = tf.keras.layers.Dense(
+            self.flags.hidden_size, activation=tf.nn.elu)
+        self.fc1 = tf.keras.layers.Dense(
+            self.flags.hidden_size, activation=tf.nn.elu)
+
+        # StockNet: 2-class
+        self.fc_out = tf.keras.layers.Dense(2)
+
+    def call(self, x, day_len, news_len, training=False):
+        max_dlen = tf.keras.backend.max(day_len).numpy()
+        max_nlen = tf.keras.backend.max(news_len).numpy()
+        x = x[:, :, :max_dlen, :max_nlen]
+        news_len = news_len[:, :, :max_dlen]
+
+        # Averaged daily news corpus
+        # (batch_size, days, max_daily_news, max_news_words
+        # -> (batch_size, days, max_daily_news, max_news_words, embedding_dim)
+        x = self.embedding(x)
+
+        # handle variable-length news word sequences
+        mask = tf.sequence_mask(news_len, maxlen=max_nlen, dtype=tf.float32)
+        mask = tf.expand_dims(mask, axis=4)
+        x *= mask
+
+        # Word-level attention
+        # x: (batch_size, days, max_daily_news, max_news_words, embedding_dim)
+        # t: (batch_size, days, max_daily_news, max_news_words, 1)
+        # n: (batch_size, days, max_daily_news, embedding_dim)
+        t = self.t(x)
+        n = tf.nn.softmax(t, axis=3) * x
+        n = tf.reduce_sum(input_tensor=n, axis=3)
+
+        # handle variable-length day news sequences
+        mask = tf.sequence_mask(day_len, maxlen=max_dlen, dtype=tf.float32)
+        mask = tf.expand_dims(mask, axis=3)
+        n *= mask
+
+        # News-level attention
+        u = self.u(n)
+        d = tf.nn.softmax(u, axis=2) * n
+        d = tf.reduce_sum(input_tensor=d, axis=2)
+
+        # Sequence modeling
+        h = self.bi_gru(d, training=training)
+
+        # Temporal attention
+        o = self.o(h)
+        v = tf.nn.softmax(o, axis=2) * h
+        v = tf.reduce_sum(input_tensor=v, axis=1)
+
+        # Discriminative Network (MLP)
+        v = self.fc0(v)
+        v = self.dropout(v) if training else v
+        v = self.fc1(v)
+        v = self.dropout(v) if training else v
+        return self.fc_out(v)
+
+    def get_bi_gru(self, units):
+        if tf.test.is_gpu_available() and not self.flags.no_gpu:
+            return tf.keras.layers.Bidirectional(
+                tf.compat.v1.keras.layers.CuDNNGRU(
+                    units, return_sequences=True
+                ), merge_mode='concat'
+            )
+        else:
+            return tf.keras.layers.Bidirectional(
+                tf.keras.layers.GRU(
+                    units, return_sequences=True
+                ), merge_mode='concat'
+            )
+ ```
+
+### Train and Testing
+
+```python
+
+def train(model, optimizer, dataset, step_counter, ep, class_weights,
+          log_interval=None):
+    """Trains model on `dataset` using `optimizer`."""
+
+    start = time.time()
+    acc_train_epoch = 0.0
+    loss_train_epoch = 0.0
+    for step, ((days, day_lens, news_lens), labels) in enumerate(dataset):
+        with tf.compat.v2.summary.record_if(tf.equal(0,step_counter % 50)):
+               # 50, global_step=step_counter):
+
+        #tf.compat.v2.summary.record_if() with the argument `lambda: tf.math.equal(0, global_step % n)
+            # Record the operations used to compute the loss given the input,
+            # so that the gradient of the loss with respect to the variables
+            # can be computed.
+            with tf.GradientTape() as tape:
+                logits = model(days, day_lens, news_lens, training=True)
+                loss_value = loss(logits, labels, class_weights)
+                loss_train_epoch += loss_value
+                accuracy = compute_accuracy(logits,labels)
+                acc_train_epoch += accuracy
+                tf.compat.v2.summary.scalar(name='loss', data=loss_value, step=tf.compat.v1.train.get_or_create_global_step())
+                tf.compat.v2.summary.scalar(name='accuracy',
+                                          data=compute_accuracy(logits, labels), step=tf.compat.v1.train.get_or_create_global_step())
+            grads = tape.gradient(loss_value, model.trainable_weights)
+            grads, _ = clip_ops.clip_by_global_norm(grads,
+                                                    model.flags.clip_norm)
+            optimizer.apply_gradients(
+                zip(grads, model.trainable_weights), global_step=step_counter)
+            if log_interval and (step + 1) % log_interval == 0:
+                rate = log_interval / (time.time() - start)
+                print('Epoch #%d\tStep #%d\tLoss: %.6f (%.1f steps/sec)' % (
+                    ep + 1, step, loss_value, rate))
+                start = time.time()
+
+            if ep == 0 and step == 0:
+                print('#trainable_params', get_num_trainable_params(model))
+
+    loss_train_epoch /= (step+1)
+    acc_train_epoch /= (step+1)
+
+    return loss_train_epoch, acc_train_epoch
+
+
+def test(model, dataset, class_weights, show_classification_report=False,
+         ds_name='Test'):
+    start = time.time()
+    """Perform an evaluation of `model` on the examples from `dataset`."""
+    avg_loss = tf.metrics.Mean('loss', dtype=tf.float32)
+    accuracy = tf.metrics.Accuracy('accuracy', dtype=tf.float32)
+
+    y_true = list()
+    y_pred = list()
+    acc_train_epoch = 0.0
+    loss_train_epoch = 0.0
+    for step, ((days, day_lens, news_lens), labels) in enumerate(dataset):        
+        logits = model(days, day_lens, news_lens, training=False)
+        avg_loss(loss(logits, labels, class_weights))
+        loss_value = loss(logits,labels,class_weights)
+        loss_train_epoch += loss_value
+        pred = tf.argmax(input=logits, axis=1, output_type=tf.int64)
+        accuracy(pred, tf.cast(labels, tf.int64))
+        acc = compute_accuracy(logits,labels)
+        acc_train_epoch += acc
+
+        if show_classification_report:
+            y_true.extend(labels.numpy().tolist())
+            y_pred.extend(pred.numpy().tolist())
+    end = time.time()
+
+    acc_train_epoch /= (step + 1)
+    loss_train_epoch /= (step + 1)
+    print('%s set: Average loss: %.6f, Accuracy: %.3f%% (%.3f sec)' %
+          (ds_name, avg_loss.result(), 100 * accuracy.result(), end - start))
+
+    with tf.compat.v2.summary.record_if(True):
+        tf.compat.v2.summary.scalar(name='loss', data=avg_loss.result(), step=tf.compat.v1.train.get_or_create_global_step())
+        tf.compat.v2.summary.scalar(name='accuracy', data=accuracy.result(), step=tf.compat.v1.train.get_or_create_global_step())
+
+    if show_classification_report:
+        # print(classification_report(y_true, y_pred,
+        #                             target_names=['PRESERVE', 'UP', 'DOWN']))
+        print(classification_report(y_true, y_pred,
+                                    target_names=['DOWN', 'UP']))  # StockNet
+
+    return acc_train_epoch, loss_train_epoch #accuracy.result(), avg_loss.result()
+```
 
 ### Results
 
