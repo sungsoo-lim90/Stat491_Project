@@ -539,6 +539,10 @@ In this guide, we have summarized the main methodologies of the paper and its fi
 * How to define and train the hybrid attention network and determine other extentions to aid learning 
 * How to evaluate the performance of the HAN
 
+## Link to the Video Presentation
+
+The link to the Video Presentation on Youtube: 
+
 ## Directories
 - src: source files
 
