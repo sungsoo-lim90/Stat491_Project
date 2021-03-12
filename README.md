@@ -519,7 +519,11 @@ In this section, we describe learning curves of the model on the Statsnet data s
 ![Alt text](/src/loss_100.png?raw=true)
 ![Alt text](/src/acc_100.png?raw=true)
 
-One thing that we notice from the learning curves is that 
+One thing that we notice from the learning curves is that normalization techniques are needed for the training step, as the validation loss increases significantly after a number of epochs. Some of the normalization techniques that can be used is as follows:
+
+- Early Stopping
+- Batch Normalization
+- Dropout Normalization
 
 ### Annualized return from the paper
 
@@ -529,14 +533,18 @@ In the paper, the authors use the follwing estimation strategy: the modle gives 
 
 ### Conclusions
 
+In this guide, we have summarized the main methodologies of the paper and its findings. Specifically, we learned how to develop a Hybrid Attention Network to predict an individual stock's trend (UP or DOWN) based on the news wordings. Some of the topics covered were:
 
+* How to define and process the tweets and price data
+* How to define and train the hybrid attention network and determine other extentions to aid learning 
+* How to evaluate the performance of the HAN
 
 ## Directories
 - src: source files
 
 ## Running the codes
 
-The code can be directly run by running the main.py file. The arguments can be changed in the config.py file. 
+The code can be directly run by running the main_upgrade.py file after downloading the data files. The arguments can be changed in the config.py file. 
 
 ## Future References
 
