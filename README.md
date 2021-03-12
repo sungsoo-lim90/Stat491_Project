@@ -67,7 +67,7 @@ The Stocknet dataset included in this experiment is the two-year price movements
 We briefly describe 
 
 ### Model
-''' python
+``` python
 
     def build_vocab(self, input_dir):
         date_min = date(9999, 1, 1)
@@ -173,7 +173,7 @@ We briefly describe
         return date_min, date_max, max_date_len, max_news_len, \
             np.asarray(word2vec)
             
-'''
+```
 ### 
 
 ### Results
