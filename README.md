@@ -518,8 +518,13 @@ def test(model, dataset, class_weights, show_classification_report=False,
 
 In this section, we describe learning curves of the model on the Statsnet data set. In the following figures, we demonstrate the loss curves for training and validation samples, as well as the accuracy curves for the train, validation, and test samples.
 
-![Alt text](/src/loss_100.png?raw=true)
-![Alt text](/src/acc_100.png?raw=true)
+<figure>
+   <img src="/src/loss_100.png" alt="#{alt_text}">
+</figure>
+
+<figure>
+   <img src="/src/acc_100.png" alt="#{alt_text}">
+</figure>
 
 One thing that we notice from the learning curves is that normalization techniques are needed for the training step, as the validation loss increases significantly after a number of epochs. Some of the normalization techniques that can be used is as follows:
 
@@ -531,7 +536,9 @@ One thing that we notice from the learning curves is that normalization techniqu
 
 In the paper, the authors use the follwing estimation strategy: the model gives each stock a score based on the probability to have a rising trend minus the probability to have a declining trend. Based on these scores, the authors construct a portfolio called top-K, selecting K stocks with the highest scores to construct a new portfolio for the next trading day. The annualized return for their method and other baseline methods are shown. 
 
-![Alt text](/src/annualized.png?raw=true)
+<figure>
+   <img src="/src/annualized.png" alt="#{alt_text}">
+</figure>
 
 ### Conclusions
 
