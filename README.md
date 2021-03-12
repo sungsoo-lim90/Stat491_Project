@@ -1,6 +1,6 @@
 # Listening to Chaotic Whispers: A Deep Learning Framework for News-oriented Stock Trend Prediction
 
-This guide explains the main ideas in the paper by Hu and others 2019. For the source code, the one given on the list was for the Statsnet, which provides the dataset for our code implementation. The source code was not available from the authors. Thus, we used the following code:
+This guide explains the main ideas in the paper by Hu and others 2019. For the code, the one given on the list was for the Statsnet. We assumed that we use the dataset provided (tweets and historical price data) with the Statsnet. The source code for the paper was not available from the authors. Thus, we used the following code:
 
 https://github.com/donghyeonk/han
 
@@ -24,13 +24,14 @@ Hybrid Attention Network (HAN), as proposed by the authors, have the ability to 
 
 The Sequential context dependency, and the Diverse influence principles indicate that 1) the news are analyzed in a temporal fashion, with more attention to critical times, and 2) news are distinguished by significance. Thus, HAN incorporates the attention mechanisms at both the news level and and temporal level. The following figure from 
 
-### News-level Embedding
-<img src="https://www.codecogs.com/eqnedit.php?latex=\begin{align*}&space;u_{ti}&space;&=&space;\text{sigmoid}(W_nn_{ti}&space;&plus;&space;b_n),&space;\\&space;\alpha_{ti}&space;&=&space;\frac{\text{exp}(u_{ti})}{\sum_j&space;\text{exp}(u_{tj})},&space;\\&space;d_{t}&space;&=&space;\sum_{i}\alpha_{ti}n_{ti}&space;\end{align*}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\begin{align*}&space;u_{ti}&space;&=&space;\text{sigmoid}(W_nn_{ti}&space;&plus;&space;b_n),&space;\\&space;\alpha_{ti}&space;&=&space;\frac{\text{exp}(u_{ti})}{\sum_j&space;\text{exp}(u_{tj})},&space;\\&space;d_{t}&space;&=&space;\sum_{i}\alpha_{ti}n_{ti}&space;\end{align*}" title="\begin{align*} u_{ti} &= \text{sigmoid}(W_nn_{ti} + b_n), \\ \alpha_{ti} &= \frac{\text{exp}(u_{ti})}{\sum_j \text{exp}(u_{tj})}, \\ d_{t} &= \sum_{i}\alpha_{ti}n_{ti} \end{align*}" /></a>
+![alt text](https://github.com/sungsoo-lim90/Stat491_Project/src/image.jpg?raw=true)
 
-- Python 2.7.11
-- Tensorflow 1.4.0
-- Scipy 1.0.0
-- NLTK 3.2.5
+## News Embedding
+
+
+### News-level Attention
+
+<img src="https://www.codecogs.com/eqnedit.php?latex=\begin{align*}&space;u_{ti}&space;&=&space;\text{sigmoid}(W_nn_{ti}&space;&plus;&space;b_n),&space;\\&space;\alpha_{ti}&space;&=&space;\frac{\text{exp}(u_{ti})}{\sum_j&space;\text{exp}(u_{tj})},&space;\\&space;d_{t}&space;&=&space;\sum_{i}\alpha_{ti}n_{ti}&space;\end{align*}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\begin{align*}&space;u_{ti}&space;&=&space;\text{sigmoid}(W_nn_{ti}&space;&plus;&space;b_n),&space;\\&space;\alpha_{ti}&space;&=&space;\frac{\text{exp}(u_{ti})}{\sum_j&space;\text{exp}(u_{tj})},&space;\\&space;d_{t}&space;&=&space;\sum_{i}\alpha_{ti}n_{ti}&space;\end{align*}" title="\begin{align*} u_{ti} &= \text{sigmoid}(W_nn_{ti} + b_n), \\ \alpha_{ti} &= \frac{\text{exp}(u_{ti})}{\sum_j \text{exp}(u_{tj})}, \\ d_{t} &= \sum_{i}\alpha_{ti}n_{ti} \end{align*}" /></a>
 
 ## Directories
 - src: source files;
