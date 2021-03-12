@@ -4,7 +4,7 @@ This guide explains the main ideas in the paper by Hu and others 2019. For the c
 
 https://github.com/donghyeonk/han
 
-This implementation does not include the Self-paced Learning mechanism, which will be dscribed shortly. This implementation also does not include the stock prediction strategy based on the classification of stock trends. For these sections, we refer to the original paper. 
+This implementation does not include the Self-paced Learning mechanism, which will be described shortly. This implementation also does not include the stock prediction strategy based on the classification of stock trends. For these sections, we refer to the original paper. 
 
 ## Introduction
 
