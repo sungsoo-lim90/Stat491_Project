@@ -26,7 +26,7 @@ The Sequential context dependency, and the Diverse influence principles indicate
 
 ![Alt text](/src/han.png?raw=true)
 
-## News Embedding
+### News Embedding
 
 The authors use a word embedding layer to calculate the embedded vector for each word and then average all the words' vectors to construct a news vector. A Word2Vec is used as the word embedding layer. 
 
@@ -35,6 +35,18 @@ The authors use a word embedding layer to calculate the embedded vector for each
 To implement the Diverse influence mechanism proposed, an attention mechanism is introduced to aggregate the news weighted by an assigned attention value in order to reward the news offering critical information. First, the attention values are estimated by feeding the news vector n(ti) through a one-layer network to get the news-level attention value u(ti) (Eq. 1). The attention weights are normalized through a softmax function (Eq. 2). Finally, the overall corpus vector is calculated as a weighted sum of each news vector (Eq. 3) and is used to represent all news information at date t. 
 
 <img src="https://www.codecogs.com/eqnedit.php?latex=\begin{align*}&space;u_{ti}&space;&=&space;\text{sigmoid}(W_nn_{ti}&space;&plus;&space;b_n),&space;\\&space;\alpha_{ti}&space;&=&space;\frac{\text{exp}(u_{ti})}{\sum_j&space;\text{exp}(u_{tj})},&space;\\&space;d_{t}&space;&=&space;\sum_{i}\alpha_{ti}n_{ti}&space;\end{align*}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\begin{align*}&space;u_{ti}&space;&=&space;\text{sigmoid}(W_nn_{ti}&space;&plus;&space;b_n),&space;\\&space;\alpha_{ti}&space;&=&space;\frac{\text{exp}(u_{ti})}{\sum_j&space;\text{exp}(u_{tj})},&space;\\&space;d_{t}&space;&=&space;\sum_{i}\alpha_{ti}n_{ti}&space;\end{align*}" title="\begin{align*} u_{ti} &= \text{sigmoid}(W_nn_{ti} + b_n), \\ \alpha_{ti} &= \frac{\text{exp}(u_{ti})}{\sum_j \text{exp}(u_{tj})}, \\ d_{t} &= \sum_{i}\alpha_{ti}n_{ti} \end{align*}" /></a>
+
+### Sequential Modeling
+
+### Temporal Attention
+
+The temporal-level attention mechanism is used to incorporate Sequential context dependency principle into HAN. Similar to the attention mechanim at the news-level, the temporal-level attention mechanim also computes 
+
+<img src="https://www.codecogs.com/eqnedit.php?latex=\begin{align*}&space;o_{i}&space;&=&space;\text{sigmoid}(W_hh_{i}&space;&plus;&space;b_h),&space;\\&space;\beta_{i}&space;&=&space;\frac{\text{exp}(\theta_io_i)}{\sum_j\text{exp}(\theta_io_i)},&space;\\&space;V&space;&=&space;\sum_i&space;\beta_ih_i&space;\end{align*}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\begin{align*}&space;o_{i}&space;&=&space;\text{sigmoid}(W_hh_{i}&space;&plus;&space;b_h),&space;\\&space;\beta_{i}&space;&=&space;\frac{\text{exp}(\theta_io_i)}{\sum_j\text{exp}(\theta_io_i)},&space;\\&space;V&space;&=&space;\sum_i&space;\beta_ih_i&space;\end{align*}" title="\begin{align*} o_{i} &= \text{sigmoid}(W_hh_{i} + b_h), \\ \beta_{i} &= \frac{\text{exp}(\theta_io_i)}{\sum_j\text{exp}(\theta_io_i)}, \\ V &= \sum_i \beta_ih_i \end{align*}" /></a>
+
+### Trend Prediction
+
+## Data and Implementation
 
 ## Directories
 - src: source files;
