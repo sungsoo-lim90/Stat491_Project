@@ -4,7 +4,7 @@ This guide explains the main ideas in the paper by Hu and others 2019. For the c
 
 https://github.com/donghyeonk/han
 
-This implementation does not include the Self-paced Learning mechanism, which will be described shortly. This implementation also does not include the stock prediction strategy based on the classification of stock trends. For these sections, we refer to the original paper. 
+This implementation includes the data processing of the datasets from Statsnet. This implementation does not include the Self-paced Learning mechanism, which will be described shortly. This implementation also does not include the stock prediction strategy based on the classification of stock trends. For these sections, we refer to the original paper. 
 
 ## Introduction
 
@@ -75,12 +75,12 @@ We briefly describe the codes for data processing, HAN, and training and testing
 
 ### Data Processing 
 
-First, we load the stock history based on the historical price data. Since the dataset describes the two-year price movements from 2014 to 2016 of 88 stocks, we first make sure that we can calculate the rise percentages of the individual stocks, as defined. We then define a stock name dictionary, which contains the name of the stocks as keys and the rise percentage and the number of days that the stock has been in the dataset. Finally, we set the two classes bounds as follows:
+First, the stock history based on the historical price data is loaded. The code then defines a stock name dictionary, which contains the name of the stocks as keys and the rise percentage and the number of days that the stock has been in the dataset. Finally,the two classes bounds are set as follows:
 
 - down_bound = -0.5  
 - up_bound = 0.55 
 
-Based on the stock name dictionary, we load the preprocessed tweets data. The preprocessed tweets data contain the key words of the tweets. We match the stock names to the tweets pertaining to those stocks, and save the lengths of the tweets and the contents of the tweets. Finally, the number of total samples with splits of train, validation, and test data is as follows: 
+Based on the stock name dictionary, the preprocessed tweets data is loaded. The preprocessed tweets data contain the key words of the tweets. The stock names to the tweets pertaining to those stocks are matched, and the lengths of the tweets and the contents of the tweets are saved. Finally, the number of total samples with splits of train, validation, and test data is as follows: 
 
 - 20345 total number of train samples
 - 2555 number of validation samples
@@ -541,7 +541,7 @@ In this guide, we have summarized the main methodologies of the paper and its fi
 
 ## Link to the Video Presentation
 
-The link to the Video Presentation on Youtube: 
+The link to the Video Presentation on Youtube: https://www.youtube.com/watch?v=PzBJrKY0QvU
 
 ## Directories
 - src: source files
